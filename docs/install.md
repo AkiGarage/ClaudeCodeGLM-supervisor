@@ -176,7 +176,9 @@ For PyPI/uvx:
    - workflow: `release.yml`
    - environment: `pypi`
 4. Publish with PyPI Trusted Publishing from GitHub Actions, not a long-lived
-   PyPI token.
+   PyPI token. The release workflow intentionally publishes to PyPI only from
+   manual `workflow_dispatch` with `publish_pypi=true`; tag pushes build draft
+   GitHub Release assets but do not publish to PyPI.
 5. Verify the package locally before publishing:
 
    ```bash

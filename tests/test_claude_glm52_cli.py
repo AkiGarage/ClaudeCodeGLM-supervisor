@@ -534,6 +534,8 @@ class ReleaseWorkflowTests(unittest.TestCase):
         self.assertIn("id-token: write", text)
         self.assertIn("environment:", text)
         self.assertIn("name: pypi", text)
+        self.assertIn("publish_pypi:", text)
+        self.assertIn("github.event_name == 'workflow_dispatch' && inputs.publish_pypi == true", text)
         self.assertIn("https://pypi.org/p/claude-glm52-supervisor", text)
         self.assertNotIn("PYPI_TOKEN", text)
         self.assertNotIn("PYPI_API_TOKEN", text)

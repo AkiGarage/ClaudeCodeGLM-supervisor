@@ -98,7 +98,9 @@ Required work before PyPI publication:
    PyPI token is stored in the repo or Actions secrets. The PyPI pending
    publisher should use project `claude-glm52-supervisor`, owner `AkiGarage`,
    repository `ClaudeCodeGLM-supervisor`, workflow `release.yml`, and
-   environment `pypi`.
+   environment `pypi`. The workflow publishes to PyPI only from manual
+   `workflow_dispatch` with `publish_pypi=true`; tag pushes are limited to
+   validation, distribution build, and draft GitHub Release assets.
 5. Build and test both wheel and sdist, then verify:
 
    ```bash
