@@ -844,6 +844,48 @@ class UserFacingReadmeTests(unittest.TestCase):
                 ):
                     self.assertNotIn(forbidden, text)
 
+    def test_user_install_docs_reflect_pypi_publication(self) -> None:
+        docs = {
+            "README.md": self._readme_text("README.md"),
+            "README.ja.md": self._readme_text("README.ja.md"),
+            "docs/install.md": (ROOT / "docs" / "install.md").read_text(
+                encoding="utf-8"
+            ),
+            "docs/distribution-strategy.md": (
+                ROOT / "docs" / "distribution-strategy.md"
+            ).read_text(encoding="utf-8"),
+        }
+
+        self.assertIn(
+            "The primary install path is the published PyPI package.",
+            docs["README.md"],
+        )
+        self.assertIn(
+            "通常のユーザー導線は、公開済みの PyPI package です。",
+            docs["README.ja.md"],
+        )
+        self.assertIn(
+            "Published as `claude-glm52-supervisor`", docs["docs/install.md"]
+        )
+        self.assertIn("Primary PyPI/uv flow", docs["docs/distribution-strategy.md"])
+
+        for name, text in docs.items():
+            with self.subTest(path=name):
+                for forbidden in (
+                    "does not yet have published GitHub Release assets or a PyPI release",
+                    "release assets pending",
+                    "publication pending",
+                    "After PyPI publication",
+                    "Until the package is published to PyPI",
+                    "Target PyPI/uv commands",
+                    "PyPI 公開までは",
+                    "PyPI 化後の目標コマンド",
+                    "今のところ Python package として install",
+                    "PyPI package 化後の理想形",
+                    "shasum -a 256 -c checksums.txt --ignore-missing",
+                ):
+                    self.assertNotIn(forbidden, text)
+
 
 class DocumentationToneTests(unittest.TestCase):
     """Catch internal shorthand that should not leak into public-facing docs."""

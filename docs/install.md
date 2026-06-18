@@ -1,26 +1,24 @@
 # Installation
 
 ClaudeCodeGLM Supervisor is moving away from custom Homebrew taps as a normal
-user install path. The current wrappers are Python standard library scripts
-plus small bash helpers; the intended public distribution is a checksum-verified
-GitHub Release installer first, then a PyPI package that works well with
-`uvx` and `uv tool install`.
+user install path. The primary public distribution is now the PyPI package for
+`uvx` and `uv tool install`, with a checksum-verified GitHub Release installer
+as an inspectable fallback.
 
-> **Status:** the repository currently has direct source-checkout wrappers, a
-> Python package layout, a release-installer script, a Trusted Publishing
-> workflow, and a validated Homebrew tap skeleton. The tap is no longer the
-> desired default user path. The repo does not yet have published GitHub
-> Release assets or a PyPI release, so public installer/`uvx` support is a
-> release target, not a current availability claim.
+> **Status:** version `0.0.2` is published on PyPI as
+> `claude-glm52-supervisor`, the `v0.0.2` GitHub Release is public, and the
+> release assets have been verified through `releases/latest/download`. The
+> Homebrew tap remains a maintainer/legacy validation route, not the default
+> user path.
 > See [`distribution-strategy.md`](distribution-strategy.md).
 
 ## Recommended channels
 
 | Channel | Status | Default? | Notes |
 | --- | --- | --- | --- |
-| GitHub Release installer | Script ready; release assets pending | Yes | Download, verify checksum, install to user prefix. |
-| PyPI + `uvx` | Package layout and workflow ready; publication pending | Yes | One-off isolated execution without a repo clone. |
-| PyPI + `uv tool install` | Best long-term persistent CLI install | Yes | Isolated env with commands on `PATH`. |
+| PyPI + `uvx` | Published as `claude-glm52-supervisor` | Yes | One-off isolated execution without a repo clone. |
+| PyPI + `uv tool install` | Published as `claude-glm52-supervisor` | Yes | Isolated env with commands on `PATH`. |
+| GitHub Release installer | Published release assets | Yes | Download, verify checksum, install to user prefix. |
 | Manual release tarball | Fallback | Yes | Most inspectable, more manual. |
 | Homebrew tap | Validated skeleton | No | Keep for maintainer E2E/legacy convenience only. |
 | npm/pnpm | Not planned | No | Wrong ecosystem for these stdlib Python wrappers. |
@@ -36,10 +34,41 @@ GitHub Release installer first, then a PyPI package that works well with
   `doctor --offline`, and `setup --print`. No network, no Claude Code, no
   secrets.
 
-## Current source-checkout use
+## Recommended PyPI/uv use
 
-Until the release installer or PyPI package exists, use a clean source checkout
-or release snapshot and run the wrappers directly:
+Use `uvx` for disposable one-off checks:
+
+```bash
+uvx --from claude-glm52-supervisor claude-glm52 doctor --offline
+```
+
+Use `uv tool install` when `claude-glm52` should stay available on `PATH`:
+
+```bash
+uv tool install claude-glm52-supervisor
+
+claude-glm52 setup --print
+```
+
+`doctor --offline` checks only installed package files and never reaches Claude
+Code, CLIProxyAPI, the network, or secret-bearing config.
+
+## GitHub Release installer
+
+Use this when you want to inspect and verify the exact release assets before
+installing:
+
+```bash
+curl -fsSLO https://github.com/AkiGarage/ClaudeCodeGLM-supervisor/releases/latest/download/claude-glm52-installer.sh
+curl -fsSLO https://github.com/AkiGarage/ClaudeCodeGLM-supervisor/releases/latest/download/checksums.txt
+curl -fsSLO https://github.com/AkiGarage/ClaudeCodeGLM-supervisor/releases/latest/download/claude-glm52-supervisor-0.0.2.tar.gz
+shasum -a 256 -c checksums.txt
+bash claude-glm52-installer.sh --prefix "$HOME/.local"
+```
+
+## Source-checkout development
+
+For development from this repository, run the compatibility wrappers directly:
 
 ```bash
 python3 outputs/claude-glm52.py --version
@@ -47,25 +76,7 @@ python3 outputs/claude-glm52.py doctor --offline
 python3 outputs/claude-glm52-delegate.py --help
 ```
 
-`doctor --offline` checks only local files and never reaches Claude Code,
-CLIProxyAPI, the network, or secret-bearing config.
-
-## Target PyPI/uv use
-
-After PyPI publication, the preferred commands should
-look like this:
-
-```bash
-uvx --from claude-glm52-supervisor claude-glm52 doctor --offline
-uv tool install claude-glm52-supervisor
-
-claude-glm52 setup --print
-```
-
-Use `uvx` for disposable one-off checks. Use `uv tool install` when
-`claude-glm52` should stay available on `PATH`.
-
-Package publication requirements:
+Future package release requirements:
 
 - keep `LICENSE` included in package metadata
 - choose and declare an SPDX license only if broader reuse rights are intended
@@ -215,8 +226,8 @@ brew test claude-glm52
   - The downloaded asset does not match `checksums.txt`. Stop, delete the
     downloaded files, and verify the release assets before retrying.
 - `uvx` cannot find `claude-glm52-supervisor`
-  - The PyPI package has not been published yet, or the package name changed.
-    Until then, use the source checkout wrappers.
+  - Confirm `uv` can reach PyPI and that the package name is exactly
+    `claude-glm52-supervisor`.
 - You only see WARN lines and nothing else
   - That is expected on machines that have not yet installed Claude Code or
     CLIProxyAPI. WARNs are deferrable; FAILs are not.

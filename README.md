@@ -62,24 +62,35 @@ Can this work without CLIProxyAPI? Not as the recommended route. A direct Claude
 
 ## Install
 
-This project is moving away from custom Homebrew taps as the normal user
-install path. The intended public path is:
+The primary install path is the published PyPI package. Custom Homebrew taps
+are not part of the normal user path.
 
-1. a checksum-verified GitHub Release installer for the first public release
-2. a PyPI package that works with `uvx` and `uv tool install`
-
-Target PyPI/uv commands:
+For a one-off check without a persistent install:
 
 ```bash
 uvx --from claude-glm52-supervisor claude-glm52 doctor --offline
+```
+
+For persistent CLI commands on `PATH`:
+
+```bash
 uv tool install claude-glm52-supervisor
 
 claude-glm52 setup --print
 ```
 
-This repo now has a Python package layout. Until the package is published to
-PyPI, run the wrappers directly from a clean source checkout or build a local
-wheel:
+If you prefer an inspectable release-asset flow, use the checksum-verifying
+GitHub Release installer:
+
+```bash
+curl -fsSLO https://github.com/AkiGarage/ClaudeCodeGLM-supervisor/releases/latest/download/claude-glm52-installer.sh
+curl -fsSLO https://github.com/AkiGarage/ClaudeCodeGLM-supervisor/releases/latest/download/checksums.txt
+curl -fsSLO https://github.com/AkiGarage/ClaudeCodeGLM-supervisor/releases/latest/download/claude-glm52-supervisor-0.0.2.tar.gz
+shasum -a 256 -c checksums.txt
+bash claude-glm52-installer.sh --prefix "$HOME/.local"
+```
+
+For source checkout development, run the compatibility wrappers directly:
 
 ```bash
 python3 outputs/claude-glm52.py --version
@@ -129,7 +140,16 @@ Sensitive values are read from environment/config at runtime. Do not commit API 
    export CLAUDE_GLM52_WORKER_CONFIG_DIR="$HOME/.claude-glm52-worker"
    ```
 
-4. Put the wrapper scripts on `PATH`, or call them directly from this repository:
+4. Install the supervisor package, or call the source-checkout compatibility
+   wrappers while developing this repository:
+
+   ```bash
+   uv tool install claude-glm52-supervisor
+   claude-glm52-delegate --help
+   claude-glm52-batch --help
+   ```
+
+   Source checkout form:
 
    ```bash
    python3 outputs/claude-glm52-delegate.py --help
@@ -139,7 +159,7 @@ Sensitive values are read from environment/config at runtime. Do not commit API 
 5. Run a lightweight smoke test before longer delegation:
 
    ```bash
-   python3 outputs/claude-glm52-delegate.py \
+   claude-glm52-delegate \
      --role review \
      --cwd . \
      --timeout 120 \

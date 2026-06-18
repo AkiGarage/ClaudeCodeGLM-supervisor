@@ -7,31 +7,16 @@ source. Do not make a custom Homebrew tap part of the normal user path.
 
 Recommended distribution order:
 
-1. **GitHub Release installer** for the first public release, because it can
-   work before the project is packaged for PyPI.
-2. **PyPI package with `uvx` / `uv tool install`** as the best long-term
-   developer UX once the package is published.
+1. **PyPI package with `uvx` / `uv tool install`** as the best long-term
+   developer UX and the default path now that `claude-glm52-supervisor` is
+   published.
+2. **GitHub Release installer** for users who want to download and verify
+   release assets directly.
 3. **Manual release tarball** as the inspectable fallback.
 4. **Homebrew tap** only for maintainer E2E/legacy convenience, not default
    installation docs.
 
-Primary release-installer flow:
-
-```bash
-curl -fsSLO https://github.com/AkiGarage/ClaudeCodeGLM-supervisor/releases/latest/download/claude-glm52-installer.sh
-curl -fsSLO https://github.com/AkiGarage/ClaudeCodeGLM-supervisor/releases/latest/download/checksums.txt
-shasum -a 256 -c checksums.txt --ignore-missing
-bash claude-glm52-installer.sh --prefix "$HOME/.local"
-
-claude-glm52 doctor --offline
-claude-glm52 setup --print
-```
-
-The docs can also show a shorter one-liner for experienced users, but the
-download-verify-run path should be the default because it is easier to audit
-and safer to copy into a security-sensitive setup guide.
-
-Target PyPI/uv flow after PyPI publication:
+Primary PyPI/uv flow:
 
 ```bash
 uvx --from claude-glm52-supervisor claude-glm52 doctor --offline
@@ -42,6 +27,19 @@ claude-glm52 setup --print
 
 Use `uvx` for one-off checks and `uv tool install` when the wrappers should be
 available on `PATH`.
+
+Release-installer fallback:
+
+```bash
+curl -fsSLO https://github.com/AkiGarage/ClaudeCodeGLM-supervisor/releases/latest/download/claude-glm52-installer.sh
+curl -fsSLO https://github.com/AkiGarage/ClaudeCodeGLM-supervisor/releases/latest/download/checksums.txt
+curl -fsSLO https://github.com/AkiGarage/ClaudeCodeGLM-supervisor/releases/latest/download/claude-glm52-supervisor-0.0.2.tar.gz
+shasum -a 256 -c checksums.txt
+bash claude-glm52-installer.sh --prefix "$HOME/.local"
+
+claude-glm52 doctor --offline
+claude-glm52 setup --print
+```
 
 ## Why not use Homebrew tap by default
 
@@ -59,9 +57,9 @@ custom registry.
 
 | Channel | Role | User command shape | Safety model | Tradeoff |
 | --- | --- | --- | --- | --- |
-| GitHub Release installer | Primary now | download installer, verify checksum, run | versioned asset, checksum, optional signature, no secrets, user prefix | Need to maintain a tiny installer script |
-| PyPI + `uvx` | Preferred long-term CLI UX | `uvx --from claude-glm52-supervisor claude-glm52 ...` | isolated disposable tool env, PyPI metadata, no repo clone | Requires PyPI release hygiene |
+| PyPI + `uvx` | Primary now | `uvx --from claude-glm52-supervisor claude-glm52 ...` | isolated disposable tool env, PyPI metadata, no repo clone | Requires PyPI release hygiene |
 | PyPI + `uv tool install` | Persistent CLI install | `uv tool install claude-glm52-supervisor` | isolated persistent tool env, easy upgrade/uninstall | Requires `uv`; cache/env behavior must be documented |
+| GitHub Release installer | Inspectable fallback | download installer, verify checksum, run | versioned asset, checksum, optional signature, no secrets, user prefix | Need to maintain a tiny installer script |
 | `pipx` | Acceptable fallback | `pipx install claude-glm52-supervisor` | isolated persistent env | Slower/less current than uv for this audience |
 | `pip install --user` | Not primary | `python3 -m pip install --user ...` | familiar Python path | More likely to pollute user Python env and PATH |
 | Manual tarball | Fallback | download tarball, extract, add wrappers to PATH | most inspectable | More manual steps |
@@ -71,13 +69,13 @@ custom registry.
 
 ## PyPI and uvx assessment
 
-`uvx` is a strong fit after packaging because it runs Python CLI tools in an
+`uvx` is a strong fit because it runs Python CLI tools in an
 isolated temporary environment, while `uv tool install` creates a persistent
 isolated tool environment with executables on `PATH`. This matches the desired
 trust boundary: the installer should place wrappers, then `doctor` and
 `setup --print` should guide the user without mutating auth/config.
 
-Required work before PyPI publication:
+Future PyPI release requirements:
 
 1. Keep `LICENSE` included in package metadata. Replace the current
    rights-reserved notice with an SPDX license only if broader reuse rights are
@@ -109,8 +107,8 @@ Required work before PyPI publication:
    claude-glm52 doctor --offline
    ```
 
-Avoid claiming public `uvx` support until the PyPI release exists. Local wheel
-verification can use the `uvx --from dist/*.whl ...` form before publication.
+Public `uvx` support is available as of `0.0.2`. Local wheel verification can
+still use the `uvx --from dist/*.whl ...` form before each future publication.
 
 References checked:
 
