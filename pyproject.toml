@@ -1,0 +1,49 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "claude-glm52-supervisor"
+version = "0.0.2"
+description = "Codex-safe Claude Code GLM-5.2 delegation wrappers."
+readme = "README.md"
+requires-python = ">=3.11"
+license-files = ["LICENSE"]
+authors = [
+  { name = "AkiGarage" },
+]
+keywords = ["codex", "claude-code", "glm", "delegation", "cli"]
+classifiers = [
+  "Development Status :: 3 - Alpha",
+  "Environment :: Console",
+  "Intended Audience :: Developers",
+  "Programming Language :: Python :: 3",
+  "Programming Language :: Python :: 3 :: Only",
+  "Programming Language :: Python :: 3.11",
+  "Programming Language :: Python :: 3.12",
+  "Programming Language :: Python :: 3.13",
+  "Programming Language :: Python :: 3.14",
+  "Topic :: Software Development",
+]
+dependencies = []
+
+[project.urls]
+Homepage = "https://github.com/AkiGarage/ClaudeCodeGLM-supervisor"
+Repository = "https://github.com/AkiGarage/ClaudeCodeGLM-supervisor"
+Documentation = "https://github.com/AkiGarage/ClaudeCodeGLM-supervisor#readme"
+
+[project.scripts]
+claude-glm52 = "claude_glm52_supervisor.cli:main"
+claude-glm52-delegate = "claude_glm52_supervisor.delegate:main"
+claude-glm52-batch = "claude_glm52_supervisor.batch:main"
+claude-glm52-subagent = "claude_glm52_supervisor.subagent:main"
+claude-glm52-reviewer = "claude_glm52_supervisor.reviewer:main"
+
+[tool.setuptools]
+package-dir = {"" = "src"}
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.setuptools.package-data]
+claude_glm52_supervisor = ["resources/*.sh"]
