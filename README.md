@@ -69,8 +69,9 @@ The package is intentionally conservative:
 
 ## Why CLIProxyAPI Is Used
 
-This route uses CLIProxyAPI between Claude Code and Z.AI because it provides
-the practical compatibility layer that makes the worker route stable:
+This route uses [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI)
+between Claude Code and Z.AI because it provides the practical compatibility
+layer that makes the worker route stable:
 
 - it exposes Claude Code-compatible model names while routing upstream to
   GLM-5.2
@@ -83,8 +84,9 @@ the practical compatibility layer that makes the worker route stable:
 - it gives the supervisor a consistent place to capture usage and quota
   evidence around delegated work
 
-Thanks to the CLIProxyAPI project, author, and maintainers. This supervisor
-depends on that gateway layer for the current recommended setup.
+This supervisor builds on the work of the CLIProxyAPI project and its
+contributors. Thanks to that community for maintaining the gateway layer that
+makes the current recommended setup practical.
 
 Can this work without CLIProxyAPI? Possibly, in some environments. A direct
 Claude Code to Z.AI Anthropic-compatible endpoint may be viable, but it is not
