@@ -45,7 +45,7 @@ class VersionPathsTests(unittest.TestCase):
     def test_version_prints_short_string(self) -> None:
         rc, out, err = _run_cli(["--version"])
         self.assertEqual(rc, 0, err)
-        self.assertEqual(out.strip(), "claude-glm52 0.0.2")
+        self.assertEqual(out.strip(), "claude-glm52 0.0.3")
 
     def test_paths_includes_outputs_and_repo_root(self) -> None:
         rc, out, err = _run_cli(["paths"])
@@ -409,7 +409,7 @@ class PackageMetadataTests(unittest.TestCase):
     def test_pyproject_declares_uv_friendly_console_scripts(self) -> None:
         project = self._pyproject()["project"]
         self.assertEqual(project["name"], "claude-glm52-supervisor")
-        self.assertEqual(project["version"], "0.0.2")
+        self.assertEqual(project["version"], "0.0.3")
         self.assertEqual(project.get("dependencies"), [])
         self.assertGreaterEqual(project["requires-python"], ">=3.11")
         self.assertEqual(project["license-files"], ["LICENSE"])
@@ -460,7 +460,7 @@ class ReleaseInstallerTests(unittest.TestCase):
                     str(self.INSTALLER),
                     "--dry-run",
                     "--version",
-                    "v0.0.2",
+                    "v0.0.3",
                     "--prefix",
                     tmp,
                 ],
@@ -472,7 +472,7 @@ class ReleaseInstallerTests(unittest.TestCase):
             )
             self.assertEqual(proc.returncode, 0, proc.stderr)
             self.assertIn("Dry run:", proc.stdout)
-            self.assertIn("claude-glm52-supervisor-0.0.2.tar.gz", proc.stdout)
+            self.assertIn("claude-glm52-supervisor-0.0.3.tar.gz", proc.stdout)
             self.assertIn("checksums.txt", proc.stdout)
             self.assertFalse((Path(tmp) / "bin").exists())
             self.assertFalse((Path(tmp) / "share").exists())
@@ -484,7 +484,7 @@ class ReleaseInstallerTests(unittest.TestCase):
                 str(self.BUILDER),
                 "--dry-run",
                 "--version",
-                "v0.0.2",
+                "v0.0.3",
                 "--out-dir",
                 "/tmp/claude-glm52-release-test",
             ],
@@ -495,7 +495,7 @@ class ReleaseInstallerTests(unittest.TestCase):
             timeout=30,
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertIn("claude-glm52-supervisor-0.0.2.tar.gz", proc.stdout)
+        self.assertIn("claude-glm52-supervisor-0.0.3.tar.gz", proc.stdout)
         self.assertIn("claude-glm52-installer.sh", proc.stdout)
         self.assertIn("checksums.txt", proc.stdout)
 
@@ -661,7 +661,7 @@ class PublicSnapshotTests(unittest.TestCase):
                 "--out-dir",
                 "/tmp/ClaudeCodeGLM-supervisor-public",
                 "--version",
-                "v0.0.2",
+                "v0.0.3",
             ],
             cwd=str(ROOT),
             stdout=subprocess.PIPE,
@@ -670,7 +670,7 @@ class PublicSnapshotTests(unittest.TestCase):
             timeout=30,
         )
         self.assertEqual(proc.returncode, 0, proc.stderr)
-        self.assertIn('"version": "v0.0.2"', proc.stdout)
+        self.assertIn('"version": "v0.0.3"', proc.stdout)
         self.assertIn('"out_dir":', proc.stdout)
         self.assertIn("ClaudeCodeGLM-supervisor-public", proc.stdout)
         self.assertIn('"build_release_assets": true', proc.stdout)
@@ -691,7 +691,7 @@ class PublicSnapshotTests(unittest.TestCase):
                     "--wheel-dir",
                     str(wheel_dir),
                     "--version",
-                    "v0.0.2",
+                    "v0.0.3",
                     "--skip-tests",
                     "--skip-package-build",
                 ],
@@ -703,15 +703,15 @@ class PublicSnapshotTests(unittest.TestCase):
             )
             self.assertEqual(proc.returncode, 0, proc.stdout + proc.stderr)
             self.assertTrue((out_dir / ".git").is_dir())
-            self.assertTrue((assets_dir / "claude-glm52-supervisor-0.0.2.tar.gz").is_file())
+            self.assertTrue((assets_dir / "claude-glm52-supervisor-0.0.3.tar.gz").is_file())
             self.assertTrue((assets_dir / "claude-glm52-installer.sh").is_file())
             self.assertTrue((assets_dir / "checksums.txt").is_file())
             tag = subprocess.check_output(
-                ["git", "tag", "--list", "v0.0.2"],
+                ["git", "tag", "--list", "v0.0.3"],
                 cwd=str(out_dir),
                 text=True,
             ).strip()
-            self.assertEqual(tag, "v0.0.2")
+            self.assertEqual(tag, "v0.0.3")
             status = subprocess.check_output(
                 ["git", "status", "--short"],
                 cwd=str(out_dir),
@@ -825,7 +825,7 @@ class UserFacingReadmeTests(unittest.TestCase):
             "brew install --HEAD --build-from-source <owner>/homebrew-tap/claude-glm52",
         ):
             self.assertNotIn(forbidden, text)
-        self.assertIn("### 7. 軽い動作確認をする", text)
+        self.assertIn("## 軽い動作確認", text)
         self.assertIn("[`LICENSE`](LICENSE) を参照してください", text)
         self.assertIn("rights-reserved", text)
 
@@ -857,21 +857,28 @@ class UserFacingReadmeTests(unittest.TestCase):
         }
 
         self.assertIn(
-            "The primary install path is the published PyPI package.",
+            "The recommended install path is PyPI through `uv`.",
             docs["README.md"],
         )
         self.assertIn(
-            "通常のユーザー導線は、公開済みの PyPI package です。",
+            "推奨のインストール方法は、PyPI package を `uv` で使う方法です。",
             docs["README.ja.md"],
         )
         self.assertIn(
-            "Published as `claude-glm52-supervisor`", docs["docs/install.md"]
+            "ClaudeCodeGLM Supervisor is distributed as the PyPI package",
+            docs["docs/install.md"],
         )
-        self.assertIn("Primary PyPI/uv flow", docs["docs/distribution-strategy.md"])
+        self.assertIn("Recommended: PyPI With uv", docs["docs/distribution-strategy.md"])
 
         for name, text in docs.items():
             with self.subTest(path=name):
                 for forbidden in (
+                    "## Current Status",
+                    "## 現状の結論",
+                    "## Recommendation",
+                    "## Public repository plan",
+                    "## Release gates",
+                    "## Open decisions",
                     "does not yet have published GitHub Release assets or a PyPI release",
                     "release assets pending",
                     "publication pending",
@@ -883,8 +890,30 @@ class UserFacingReadmeTests(unittest.TestCase):
                     "今のところ Python package として install",
                     "PyPI package 化後の理想形",
                     "shasum -a 256 -c checksums.txt --ignore-missing",
+                    "maintainer validation",
+                    "private development",
+                    "clean snapshot",
+                    "手元の未push",
                 ):
                     self.assertNotIn(forbidden, text)
+
+    def test_readmes_link_to_codex_setup_prompt(self) -> None:
+        self.assertIn(
+            "docs/codex-setup-prompt.md", self._readme_text("README.md")
+        )
+        self.assertIn(
+            "docs/codex-setup-prompt.md", self._readme_text("README.ja.md")
+        )
+        prompt = (ROOT / "docs" / "codex-setup-prompt.md").read_text(
+            encoding="utf-8"
+        )
+        for required in (
+            "uv tool install --upgrade claude-glm52-supervisor",
+            "claude-glm52 doctor --offline",
+            "claude-glm52-delegate --role review",
+            "Do not read, print, copy, or ask me to paste API keys",
+        ):
+            self.assertIn(required, prompt)
 
 
 class DocumentationToneTests(unittest.TestCase):
@@ -895,6 +924,8 @@ class DocumentationToneTests(unittest.TestCase):
         ROOT / "README.ja.md",
         ROOT / "SECURITY.md",
         ROOT / "docs" / "install.md",
+        ROOT / "docs" / "distribution-strategy.md",
+        ROOT / "docs" / "codex-setup-prompt.md",
         ROOT / "packaging" / "homebrew-tap" / "README.md",
         ROOT / "outputs" / "claude-glm52-delegation-contract.md",
         ROOT / "outputs" / "supervisor-duel-codex-comparison-20260619.md",
@@ -922,13 +953,19 @@ class DocumentationToneTests(unittest.TestCase):
                 for forbidden in self.FORBIDDEN:
                     self.assertNotIn(forbidden, scan_text)
 
-    def test_install_docs_explain_head_is_not_local_e2e(self) -> None:
+    def test_install_docs_stay_user_facing(self) -> None:
         install = (ROOT / "docs" / "install.md").read_text(encoding="utf-8")
         tap_readme = (ROOT / "packaging" / "homebrew-tap" / "README.md").read_text(
             encoding="utf-8"
         )
-        self.assertIn("Do not use `--HEAD` for that local-tarball E2E", install)
-        self.assertIn("Do not use `--HEAD` for local tarball E2E", tap_readme)
+        for forbidden in (
+            "pre-release Homebrew E2E",
+            "private development tree",
+            "temporary tap",
+            "clean public source snapshot",
+        ):
+            self.assertNotIn(forbidden, install)
+            self.assertNotIn(forbidden, tap_readme)
 
 
 if __name__ == "__main__":

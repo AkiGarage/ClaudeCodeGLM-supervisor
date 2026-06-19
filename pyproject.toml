@@ -4,7 +4,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "claude-glm52-supervisor"
-version = "0.0.2"
+version = "0.0.3"
 description = "Codex-safe Claude Code GLM-5.2 delegation wrappers."
 readme = "README.md"
 requires-python = ">=3.11"

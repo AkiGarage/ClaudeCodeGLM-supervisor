@@ -1,10 +1,8 @@
 # ClaudeCodeGLM Supervisor Homebrew formula.
 #
 # RELEASE NOTE:
-# The public Homebrew formula fetches from the clean public source snapshot
-# repo, not from the private development repository. That keeps private git
-# history, local workspaces, and generated evaluation artifacts out of the
-# installable public archive.
+# This advanced formula fetches from a public release archive and installs thin
+# wrappers around the supervisor's Python and shell entry points.
 #
 # This formula only installs repo files and thin bin/ wrappers. It never
 # writes secrets, never edits Claude Code global config, and never starts
@@ -20,9 +18,7 @@ class ClaudeGlm52 < Formula
   # "no SPDX claim" marker. Replace with a real SPDX expression only if a
   # future license grants matching reuse/redistribution rights.
   license :cannot_represent
-  # `--HEAD` builds from the remote `main` head (post-push), not the local
-  # working tree. Run wrappers directly from the repo, or point a temporary
-  # local formula/tarball at your clone, for pre-push local testing.
+  # `--HEAD` builds from the remote `main` head, not the local working tree.
   head "https://github.com/AkiGarage/claude-glm52.git", branch: "main"
 
   # The umbrella CLI and wrappers are Python 3 stdlib-only. We do not require
