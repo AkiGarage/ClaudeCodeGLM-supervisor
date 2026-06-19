@@ -12,6 +12,56 @@ ClaudeCodeGLM Supervisor は、Codex から Claude Code へ範囲を決めた実
 
 Codex は、計画、制約設計、危険な操作の制御、検証、最終確認を担当します。Claude Code GLM-5.2 は、指定された範囲だけを実行する作業担当として動きます。
 
+## 仕組み
+
+ClaudeCodeGLM Supervisor は、Codex が制御を保ったまま、長めの実装やレビューだけを作業担当に渡すためのものです。
+
+1. Codex がリポジトリを読み、委託すべき作業か判断します。
+2. Codex が、変更してよい file、制約、合格条件、検証 command を含む task packet を作ります。
+3. supervisor が、その task packet を GLM-5.2 route の Claude Code に渡します。
+4. Claude Code は、指定された範囲の実装またはレビューだけを行います。
+5. Codex が、結果、差分、検証結果を確認し、採用するか、修正するか、さらに狭い task に分け直します。
+
+日常運用では、`implement with CCG`、`use CCG for implementation`、`ClaudeCodeGLM に実装委託して` のような短い依頼で十分です。この場合の意味は、Codex が先に計画し、作業担当が範囲付きで実行し、Codex が最後に監査する、という流れです。
+
+この worker route は丸投げ用ではありません。仕様判断、危険な操作、大きな refactor、commit、push、最終承認は、人間が明示しない限り Codex 側に残します。
+
+## 使う場面
+
+この supervisor は、Codex だけで一気に編集するには少し大きいが、範囲と検証は厳密に管理したい作業に向いています。たとえば次のような場合です。
+
+- 変更範囲が小さく定義された feature 実装
+- Codex が期待挙動を決めた後の test 追加や更新
+- 合格条件が明確な読み取り専用 review
+- 独立した複数 task を小さな batch に分けて実行する作業
+- screenshot や画像 evidence を text に変換してから coding task に渡す作業
+
+一方で、主に product judgment が必要な作業、security-sensitive な config、credential setup、破壊的な file 操作、広範な architecture 変更、release 承認は委託に向きません。その判断は Codex と人間の側に残してください。
+
+## 安全モデル
+
+この package は保守的に動くように設計されています。
+
+- task packet には worker が編集してよい file を明記します。
+- worker prompt では、secret access、広範囲 filesystem search、file 削除、commit、push、auth/config 編集を禁止します。
+- Codex が差分を読み、validation を再実行します。
+- offline check は Claude Code、CLIProxyAPI、Z.AI、secret を含む config を呼びません。
+- usage / quota snapshot は evidence として扱い、自動的に使い続ける許可としては扱いません。
+
+## CLIProxyAPI を使う理由
+
+この route では、Claude Code と Z.AI の間に CLIProxyAPI を置きます。CLIProxyAPI が、Claude Code と GLM-5.2 の間の実用的な互換 layer になるためです。
+
+- Claude Code から見える model 名を保ちながら、上流を GLM-5.2 に向けられます。
+- Claude Code に、この route で検証済みの大きな context / output 挙動に合う model metadata を見せられます。
+- local routing、alias、retry、複数 key / provider 構成を一箇所で扱えます。
+- Claude Code の endpoint 設定を何度も直接書き換えるより、構成がきれいに保てます。
+- delegated work の usage / quota evidence を取りやすい安定した中継点になります。
+
+CLIProxyAPI project、作者、maintainers に感謝します。この supervisor の推奨 setup は、その gateway layer に依存しています。
+
+CLIProxyAPI なしで動くかどうかについては、環境によっては Z.AI の Anthropic-compatible endpoint へ Claude Code から直接つなげる可能性があります。ただし、この package の supported route ではありません。CLIProxyAPI なしでは、model alias、大きな context 用 metadata、output ceiling、retry behavior、usage snapshot、provider routing まわりの setup が増え、検証済みの保証も弱くなります。実運用では、Claude Code config の手作業が増え、worker の挙動の再現性が下がり、Codex が delegated run を監査するときの evidence も弱くなります。
+
 ## インストール
 
 推奨のインストール方法は、PyPI package を `uv` で使う方法です。
@@ -55,24 +105,23 @@ bash claude-glm52-installer.sh --prefix "$HOME/.local"
 
 必須:
 
-| 種類 | 必要なもの |
-| --- | --- |
-| OS | macOS または Linux |
-| Python | Python 3.11 以上 |
-| Shell | Bash |
-| Git | `git` |
-| Claude Code | `claude` command |
-| CLIProxyAPI | ローカルの Anthropic-compatible gateway |
-| Z.AI | GLM-5.2 を使える account / API key |
+- macOS または Linux の shell environment
+- Python 3.11 以上
+- Bash
+- Git
+- Claude Code CLI の install と認証
+- CLIProxyAPI の install と local 起動
+- GLM-5.2 access を持つ Z.AI account / API key
 
 推奨:
 
-- `uv`
-- `rg`
-- GNU `timeout`
-- Claude Code worker 専用 config directory: `~/.claude-glm52-worker`
+- install / upgrade 用の `uv`
+- repository inspection を速くする `rg`
+- runaway task guard 用の GNU `timeout`
+- Claude Code worker 専用 config directory、通常は
+  `~/.claude-glm52-worker`
 
-API key、`.env`、auth token、provider config、shell history は git に入れないでください。
+Sensitive value は runtime に local environment または provider config から読みます。API key、`.env` file、auth token、provider config、shell history は commit しないでください。
 
 ## セットアップ概要
 
@@ -177,9 +226,11 @@ claude-glm52-delegate \
   --result-file delegate-result.json
 ```
 
-GLM-5.2 coding worker は text-only として扱います。画像は先に Z.AI Vision MCP / OCR で解析し、短く整理した evidence text だけを task packet に入れます。
+GLM-5.2 coding worker は text-only として扱います。画像 file は先に軽量な Z.AI Vision MCP / OCR preflight で解析します。抽出した evidence text だけを task packet に入れ、raw image summary は result JSON や usage log に保存しません。
 
 ## task packet の形
+
+task 自体が日本語 text を扱う場合を除き、packet は短い English で書くのを推奨します。
 
 ```text
 Role: implementation worker

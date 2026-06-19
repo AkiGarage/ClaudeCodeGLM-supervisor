@@ -915,6 +915,59 @@ class UserFacingReadmeTests(unittest.TestCase):
         ):
             self.assertIn(required, prompt)
 
+    def test_readmes_explain_cliproxyapi_and_safety_model(self) -> None:
+        english = self._readme_text("README.md")
+        japanese = self._readme_text("README.ja.md")
+
+        english_required = (
+            "## When To Use It",
+            "## Safety Model",
+            "## Why CLIProxyAPI Is Used",
+            "CLIProxyAPI project, author, and maintainers",
+            "Can this work without CLIProxyAPI?",
+            "large-context metadata",
+            "output ceiling",
+            "usage snapshots",
+            "weaker evidence when Codex audits a delegated run",
+            "raw image summaries",
+            "not persisted in result JSON or usage logs",
+        )
+        japanese_required = (
+            "## 使う場面",
+            "## 安全モデル",
+            "## CLIProxyAPI を使う理由",
+            "CLIProxyAPI project、作者、maintainers に感謝します",
+            "CLIProxyAPI なしで動くかどうか",
+            "大きな context 用 metadata",
+            "output ceiling",
+            "usage snapshot",
+            "Codex が delegated run を監査するときの evidence",
+            "raw image summary は result JSON や usage log に保存しません",
+        )
+
+        for needle in english_required:
+            self.assertIn(needle, english)
+        for needle in japanese_required:
+            self.assertIn(needle, japanese)
+
+    def test_japanese_readme_keeps_english_readme_concepts(self) -> None:
+        japanese = self._readme_text("README.ja.md")
+        for concept in (
+            "Codex にセットアップさせる",
+            "必要要件",
+            "セットアップ概要",
+            "軽い動作確認",
+            "主な command",
+            "task packet の形",
+            "検証済みの構成",
+            "関連 docs",
+            "License",
+            "Sensitive value",
+            "Claude Code worker 専用 config directory",
+            "task 自体が日本語 text を扱う場合を除き",
+        ):
+            self.assertIn(concept, japanese)
+
 
 class DocumentationToneTests(unittest.TestCase):
     """Catch internal shorthand that should not leak into public-facing docs."""

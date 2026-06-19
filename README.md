@@ -16,6 +16,84 @@ and final acceptance. Claude Code GLM-5.2 acts as a constrained worker that
 edits only the requested files, runs the requested checks, and returns a compact
 result for Codex to audit.
 
+## How It Works
+
+ClaudeCodeGLM Supervisor is designed for tasks that are large enough to benefit
+from delegation but still need Codex to stay in control.
+
+1. Codex reads the repository and decides whether delegation is appropriate.
+2. Codex creates a bounded task packet with allowed files, constraints,
+   acceptance criteria, and validation commands.
+3. The supervisor sends that packet to Claude Code through the GLM-5.2 route.
+4. Claude Code performs only the requested implementation or review work.
+5. Codex inspects the result, checks the diff, reruns validation, and accepts
+   or narrows the task.
+
+Short trigger phrases such as `implement with CCG`, `use CCG for
+implementation`, or `delegate implementation to ClaudeCodeGLM` should mean:
+Codex plans first, the worker executes a bounded task, and Codex audits the
+final result.
+
+Do not treat the worker route as a blind autopilot. Product judgment,
+high-risk operations, broad refactors, commits, pushes, and final acceptance
+stay with Codex unless a human explicitly asks otherwise.
+
+## When To Use It
+
+Use this supervisor when a task is too large for a single comfortable Codex
+edit, but still needs a strict owner for scope and validation. Good examples:
+
+- implementing a well-scoped feature across a small set of files
+- writing or updating tests after Codex has defined the expected behavior
+- doing a read-only review with clear acceptance criteria
+- splitting independent implementation tasks into a small bounded batch
+- converting image or screenshot evidence into text before a coding task
+
+Avoid delegation when the task is mainly product judgment, security-sensitive
+configuration, credential setup, destructive file operations, broad
+architecture changes, or release approval. Those decisions should stay with
+Codex and the human operator.
+
+## Safety Model
+
+The package is intentionally conservative:
+
+- task packets should name the files the worker may edit
+- worker prompts should forbid secret access, broad filesystem search,
+  deletion, commits, pushes, and auth/config edits
+- Codex remains responsible for reading the diff and rerunning validation
+- offline checks never call Claude Code, CLIProxyAPI, Z.AI, or secret-bearing
+  config
+- usage and quota snapshots are treated as evidence, not as permission to keep
+  spending automatically
+
+## Why CLIProxyAPI Is Used
+
+This route uses CLIProxyAPI between Claude Code and Z.AI because it provides
+the practical compatibility layer that makes the worker route stable:
+
+- it exposes Claude Code-compatible model names while routing upstream to
+  GLM-5.2
+- it lets Claude Code see model metadata that matches the verified large
+  context and output behavior for this route
+- it supports local routing, aliases, retries, and multi-key/provider setups in
+  one place
+- it keeps Claude Code configuration cleaner than repeatedly patching ad hoc
+  endpoint settings
+- it gives the supervisor a consistent place to capture usage and quota
+  evidence around delegated work
+
+Thanks to the CLIProxyAPI project, author, and maintainers. This supervisor
+depends on that gateway layer for the current recommended setup.
+
+Can this work without CLIProxyAPI? Possibly, in some environments. A direct
+Claude Code to Z.AI Anthropic-compatible endpoint may be viable, but it is not
+the supported route for this package. Without CLIProxyAPI, expect extra setup
+work and reduced guarantees around model aliases, large-context metadata,
+output ceiling, retry behavior, usage snapshots, and provider routing. In
+practice, that means more manual Claude Code configuration, less reproducible
+worker behavior, and weaker evidence when Codex audits a delegated run.
+
 ## Install
 
 The recommended install path is PyPI through `uv`.
